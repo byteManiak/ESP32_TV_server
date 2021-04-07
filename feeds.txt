@@ -1,0 +1,5 @@
+https://www.reddit.com/r/worldnews/.rss
+https://www.yahoo.com/news/rss/world
+https://www.globalissues.org/news/feed
+https://www.aljazeera.com/xml/rss/all.xml
+https://www.oann.com/feed/
