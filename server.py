@@ -7,6 +7,12 @@ from unidecode import unidecode # For encoding data in the right format
 from datetime import datetime # For weather date and time formatting
 import pyowm # For weather API data querying
 import os # Misc
+import io
+import PIL
+import random
+import string
+from PIL import Image
+from PIL import ImageDraw
 
 links = open("links.txt").readlines() # Links used for Internet radio stations
 names = open("names.txt").readlines() # Names of Internet radio stations
@@ -134,6 +140,12 @@ def handleValues(request):
     # Encode the returned message so it can be read by the ESP
     return unidecode(response).encode('ascii')
 
+def get_random_string(length):
+    # choose from all lowercase letter
+    letters = string.ascii_lowercase
+    result_str = ''.join(random.choice(letters) for i in range(length))
+    return result_str
+
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         # Parse values of request
@@ -148,8 +160,35 @@ class handler(BaseHTTPRequestHandler):
         self.wfile.write(ret)
         # self.wfile.flush()
 
+
+    imgdata = bytearray()
+    imgbuf = None
     def do_POST(self):
-        pass
+        self.send_response(200)
+        self.send_header('Content-Length', 0)
+        self.end_headers()
+
+        dataLen = int(self.headers['Content-Length'])
+        data = self.rfile.read(dataLen)
+
+        if self.path == "/screenshot":
+
+            for i in data:
+                color = int(i)
+                r = (int(color & 0x3) * 85).to_bytes(1, byteorder='big')
+                g = (int((color & 0xC) >> 2) * 85).to_bytes(1, byteorder='big')
+                b = (int((color & 0x30) >> 4) * 85).to_bytes(1, byteorder='big')
+                self.imgdata.extend(r)
+                self.imgdata.extend(g)
+                self.imgdata.extend(b)
+            print(len(self.imgdata))
+
+        elif self.path == "/done":
+            self.imgbuf = Image.frombuffer('RGB', (425,240), bytes(self.imgdata))
+            del self.imgdata[:]
+            self.imgbuf.show()
+            self.imgbuf.save(get_random_string(8) + ".png")
+            self.imgbuf = None
 
 # Open a server socket on port 25565
 server_address = ('', 25565)
